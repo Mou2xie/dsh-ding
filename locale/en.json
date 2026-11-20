@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Task completion alerts",
+    "description": "Shows a system notification and plays a short chime when an agent finishes a task, then opens that session when the notification is clicked. Alerts stay quiet while you are already viewing the session, are skipped for subagent tasks, and also fire when a task is stopped or fails. Allow notifications for DeepSeek Harness to see banners; alerts stop when the app quits.",
+    "detail": "docs/DETAIL.md"
+  }
+}

@@ -1,0 +1,4 @@
+# dsh-ding bundle patch: insert the plugin row into the profile layer stack.
+- insert:
+    - id: dsh-ding
+      name: '@local/dsh-ding'
