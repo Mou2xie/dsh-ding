@@ -50,6 +50,14 @@ Run this in the page console to fire one notification and chime immediately:
 document.dispatchEvent(new Event('dsh-ding:test'))
 ```
 
+## Audition and tune the chime
+
+Open `preview/chime.html` in a browser (from this directory: `open preview/chime.html`)
+and play the presets. The page runs the same frequencies, durations, and
+envelope as the plugin. The plugin's level is `CHIME_LEVEL` in `client.js`
+(default `3.0`, i.e. 3× the original `0.115 / 0.055` tone gains); keep it at
+or below `4` so the two tones cannot clip.
+
 ## Disable or remove
 
 Use the row in **Plugins** to disable or remove the bundle. The overlay entry,

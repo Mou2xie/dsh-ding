@@ -17,6 +17,11 @@ window.__ModuleLoader__.load({
     const NS = 'dsh-ding'
     const TEST_EVENT = 'dsh-ding:test'
     const TAG_PREFIX = 'dsh-ding:'
+    /*
+     * Multiplier over the original 0.115 / 0.055 tone gains. Keep it at or
+     * below 4: the two tones then sum to at most ~0.68 peak and cannot clip.
+     */
+    const CHIME_LEVEL = 3.0
 
     const DICT = {
       en: {
@@ -52,8 +57,8 @@ window.__ModuleLoader__.load({
 
           const start = context.currentTime + 0.01
           const tones = [
-            { frequency: 1046.5, gain: 0.115, duration: 0.5 },
-            { frequency: 1568, gain: 0.055, duration: 0.36 }
+            { frequency: 1046.5, gain: 0.115 * CHIME_LEVEL, duration: 0.5 },
+            { frequency: 1568, gain: 0.055 * CHIME_LEVEL, duration: 0.36 }
           ]
           for (const tone of tones) {
             const oscillator = context.createOscillator()

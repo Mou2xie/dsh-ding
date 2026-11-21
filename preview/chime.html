@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dsh-ding chime audition</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7fb;
+    --panel: #ffffff;
+    --ink: #1c2333;
+    --muted: #5c6780;
+    --line: #d8deee;
+    --accent: #4d6bfe;
+    --accent-ink: #ffffff;
+    --focus: #1c2333;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11141c;
+      --panel: #1a1f2b;
+      --ink: #eef1f8;
+      --muted: #a3adc4;
+      --line: #303847;
+      --focus: #ffffff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 32px 16px;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  main { width: min(620px, 100%); }
+  h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.01em; }
+  .lede { margin: 0 0 22px; color: var(--muted); }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .presets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  button {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 10px 8px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button span { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
+  button:hover { border-color: var(--accent); }
+  button.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .row { display: flex; align-items: center; gap: 12px; margin: 14px 0 18px; }
+  .row label { flex: none; color: var(--muted); }
+  input[type="range"] { flex: 1; accent-color: var(--accent); }
+  output { min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+  #play {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  #play:hover { filter: brightness(1.06); }
+  .meta { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
+  .meta b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .note { margin: 18px 0 0; color: var(--muted); font-size: 12.5px; }
+  kbd {
+    font: inherit;
+    font-size: 12px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>dsh-ding chime</h1>
+  <p class="lede">The exact two-tone chime the plugin plays on a finished task. Pick a level by ear; every button plays it immediately.</p>
+
+  <section class="card">
+    <div class="presets" id="presets">
+      <button type="button" data-mult="1">1.0× <span>original</span></button>
+      <button type="button" data-mult="1.5">1.5×</button>
+      <button type="button" data-mult="2.2">2.2×</button>
+      <button type="button" data-mult="3">3.0× <span>current default</span></button>
+      <button type="button" data-mult="4">4.0× <span>loudest safe</span></button>
+    </div>
+
+    <div class="row">
+      <label for="gain">Level</label>
+      <input id="gain" type="range" min="0.5" max="4" step="0.1" value="3">
+      <output id="gainOut" for="gain">3.0×</output>
+    </div>
+
+    <button type="button" id="play">Play chime</button>
+
+    <p class="meta">Tone gains: <b id="effective">0.345 / 0.165</b> · base <b>0.115 / 0.055</b></p>
+  </section>
+
+  <p class="note">This page is a local tuning tool, not part of the DSH UI. The plugin uses these frequencies, durations, and envelope with the same level. System volume and the output device still apply, and levels above 4× can clip the two tones.</p>
+</main>
+
+<script>
+  const BASE = [
+    { frequency: 1046.5, gain: 0.115, duration: 0.5 },
+    { frequency: 1568, gain: 0.055, duration: 0.36 }
+  ]
+
+  let context
+
+  function play(level) {
+    try {
+      const Ctor = window.AudioContext || window.webkitAudioContext
+      if (Ctor === undefined) return
+      context = context || new Ctor()
+      if (context.state === 'suspended') void context.resume()
+
+      const start = context.currentTime + 0.01
+      for (const tone of BASE) {
+        const oscillator = context.createOscillator()
+        const envelope = context.createGain()
+        oscillator.type = 'sine'
+        oscillator.frequency.value = tone.frequency
+        envelope.gain.setValueAtTime(0.0001, start)
+        envelope.gain.exponentialRampToValueAtTime(tone.gain * level, start + 0.012)
+        envelope.gain.exponentialRampToValueAtTime(0.0001, start + tone.duration)
+        oscillator.connect(envelope)
+        envelope.connect(context.destination)
+        oscillator.start(start)
+        oscillator.stop(start + tone.duration + 0.02)
+        oscillator.onended = () => {
+          try {
+            oscillator.disconnect()
+            envelope.disconnect()
+          } catch {}
+        }
+      }
+    } catch (error) {
+      console.error('[dsh-ding] chime preview failed', error)
+    }
+  }
+
+  const presets = [...document.querySelectorAll('[data-mult]')]
+  const slider = document.getElementById('gain')
+  const output = document.getElementById('gainOut')
+  const effective = document.getElementById('effective')
+
+  function setLevel(level, playNow) {
+    slider.value = String(level)
+    output.value = level.toFixed(1) + '×'
+    effective.textContent = (BASE[0].gain * level).toFixed(3) + ' / ' + (BASE[1].gain * level).toFixed(3)
+    for (const button of presets) {
+      button.classList.toggle('active', Number(button.dataset.mult) === level)
+    }
+    if (playNow) play(level)
+  }
+
+  for (const button of presets) {
+    button.addEventListener('click', () => setLevel(Number(button.dataset.mult), true))
+  }
+  slider.addEventListener('input', () => setLevel(Number(slider.value), false))
+  document.getElementById('play').addEventListener('click', () => play(Number(slider.value)))
+
+  setLevel(3.0, false)
+</script>
+</body>
+</html>
